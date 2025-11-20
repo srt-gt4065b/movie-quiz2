@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 영화 제목 맞추기 퀴즈</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .login-section, .quiz-section, .result-section, .loading-section {
+            display: none;
+        }
+
+        .login-section.active, .quiz-section.active, .result-section.active, .loading-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .movie-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 5px solid #2a5298;
+        }
+
+        .question-number {
+            color: #2a5298;
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .movie-hint {
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            color: #333;
+            line-height: 1.6;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px dashed #2a5298;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            border: 3px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #2a5298;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .feedback.wrong {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .leaderboard {
+            margin-top: 30px;
+        }
+
+        .leaderboard h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .rank-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+
+        .rank-item:hover {
+            transform: translateX(5px);
+        }
+
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 15px;
+            font-size: 1.1em;
+        }
+
+        .rank-1 { background: gold; color: #333; }
+        .rank-2 { background: silver; color: #333; }
+        .rank-3 { background: #cd7f32; color: white; }
+        .rank-other { background: #2a5298; color: white; }
+
+        .rank-info {
+            flex: 1;
+        }
+
+        .rank-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .rank-student-id {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .rank-score {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2a5298;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2a5298;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #dc3545;
+            margin-bottom: 20px;
+        }
+
+        .correct-answer {
+            color: #28a745;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        /* 챗봇 플로팅 버튼 */
+        .chatbot-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 9999;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .chatbot-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .chatbot-button svg {
+            width: 35px;
+            height: 35px;
+            fill: white;
+        }
+
+        .chatbot-tooltip {
+            position: absolute;
+            right: 85px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            font-weight: 600;
+            color: #333;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .chatbot-button:hover .chatbot-tooltip {
+            opacity: 1;
+        }
+
+        .chatbot-tooltip::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid white;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            }
+            50% {
+                box-shadow: 0 4px 30px rgba(102, 126, 234, 0.7);
+            }
+        }
+
+        /* 챗봇 모달 오버레이 */
+        .chatbot-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .chatbot-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 챗봇 모달 */
+        .chatbot-modal {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            height: 80vh;
+            max-height: 700px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease;
+            overflow: hidden;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 챗봇 헤더 */
+        .chatbot-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chatbot-header h3 {
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chatbot-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .chatbot-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 챗봇 메시지 영역 */
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            animation: messageSlide 0.3s ease;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-message.user {
+            flex-direction: row-reverse;
+        }
+
+        .chat-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .chat-message.assistant .chat-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .chat-message.user .chat-avatar {
+            background: #28a745;
+        }
+
+        .chat-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            line-height: 1.5;
+        }
+
+        .chat-message.assistant .chat-bubble {
+            background: white;
+            border: 1px solid #e0e0e0;
+        }
+
+        .chat-message.user .chat-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* 챗봇 입력 영역 */
+        .chatbot-input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chatbot-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chatbot-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .chatbot-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .chatbot-send {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .chatbot-send:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+
+        .chatbot-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .chatbot-send svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        /* 타이핑 인디케이터 */
+        .typing-indicator {
+            display: none;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 15px;
+            width: fit-content;
+            border: 1px solid #e0e0e0;
+        }
+
+        .typing-indicator.active {
+            display: block;
+        }
+
+        .typing-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* API 키 설정 화면 */
+        .api-key-setup {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .api-key-setup h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .api-key-setup p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .api-key-setup input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .api-key-setup input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .api-key-setup button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .api-key-setup button:hover {
+            opacity: 0.9;
+        }
+
+        .api-key-setup .help-link {
+            display: block;
+            margin-top: 15px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .api-key-setup .help-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .chatbot-button {
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+            }
+
+            .chatbot-button svg {
+                width: 30px;
+                height: 30px;
+            }
+
+            .chatbot-tooltip {
+                display: none;
+            }
+
+            .chatbot-modal {
+                width: 95%;
+                height: 90vh;
+                max-height: none;
+            }
+
+            .chat-bubble {
+                max-width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 영화 제목 맞추기</h1>
+            <p>우송대 AI 경영학과</p>
+        </div>
+
+        <div class="content">
+            <!-- 로딩 섹션 -->
+            <div class="loading-section">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>퀴즈를 불러오는 중...</p>
+                </div>
+            </div>
+
+            <!-- 로그인 섹션 -->
+            <div class="login-section">
+                <h2 style="margin-bottom: 25px; color: #333;">학생 정보 입력</h2>
+                <div id="loginError"></div>
+                <div class="form-group">
+                    <label>이름</label>
+                    <input type="text" id="studentName" placeholder="홍길동">
+                </div>
+                <div class="form-group">
+                    <label>학번</label>
+                    <input type="text" id="studentId" placeholder="20241234">
+                </div>
+                <button class="btn" onclick="startQuiz()">퀴즈 시작하기 🎬</button>
+            </div>
+
+            <!-- 퀴즈 섹션 -->
+            <div class="quiz-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-label">현재 문제</div>
+                        <div class="stat-value" id="currentQuestion">1</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">점수</div>
+                        <div class="stat-value" id="currentScore">0</div>
+                    </div>
+                </div>
+                <div id="questionContainer"></div>
+            </div>
+
+            <!-- 결과 섹션 -->
+            <div class="result-section">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h2 style="color: #333; font-size: 2em; margin-bottom: 10px;">🎉 퀴즈 완료!</h2>
+                    <p style="color: #666; font-size: 1.2em;">수고하셨습니다!</p>
+                </div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-label">총 점수</div>
+                        <div class="stat-value" id="finalScore">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">정답률</div>
+                        <div class="stat-value" id="accuracy">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">내 순위</div>
+                        <div class="stat-value" id="myRank">-</div>
+                    </div>
+                </div>
+                <div class="leaderboard">
+                    <h3>🏆 전체 순위</h3>
+                    <div id="leaderboardList"></div>
+                </div>
+                <button class="btn" onclick="resetQuiz()" style="margin-top: 20px;">다시 도전하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 챗봇 플로팅 버튼 -->
+    <div class="chatbot-button" onclick="toggleChatbot()">
+        <div class="chatbot-tooltip">💡 영화 힌트 도우미</div>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3 .97 4.29L2 22l5.71-.97C9 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.38 0-2.68-.3-3.86-.83l-.28-.15-2.9.49.49-2.9-.15-.28C4.3 14.68 4 13.38 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm1-11h-2v4h2V9zm0 6h-2v2h2v-2z"/>
+        </svg>
+    </div>
+
+    <!-- 챗봇 모달 -->
+    <div class="chatbot-overlay" id="chatbotOverlay" onclick="closeChatbotIfOverlay(event)">
+        <div class="chatbot-modal" onclick="event.stopPropagation()">
+            <div class="chatbot-header">
+                <h3>
+                    <span>🤖</span>
+                    <span>영화 힌트 도우미</span>
+                </h3>
+                <button class="chatbot-close" onclick="closeChatbot()">✕</button>
+            </div>
+            
+            <div id="chatbotContent">
+                <!-- API 키 설정 화면 -->
+                <div class="api-key-setup" id="apiKeySetup">
+                    <h4>🔑 API 키 확인</h4>
+                    <p>챗봇 사용을 위한 API 키가 이미 설정되어 있습니다.<br>문제가 있으면 아래에 새 키를 입력하세요.</p>
+                    <input type="password" id="apiKeyInput" placeholder="sk-proj-...">
+                    <button onclick="saveApiKey()">새 키로 변경</button>
+                    <button onclick="showChatArea()" style="background: #28a745; margin-top: 5px;">그냥 사용하기</button>
+                </div>
+
+                <!-- 채팅 화면 -->
+                <div style="display: none; flex-direction: column; height: 100%;" id="chatArea">
+                    <div class="chatbot-messages" id="chatMessages">
+                        <div class="chat-message assistant">
+                            <div class="chat-avatar">🤖</div>
+                            <div class="chat-bubble">
+                                안녕하세요! 영화 힌트 도우미입니다. 🎬<br>
+                                영화 제목을 맞추는데 어려움이 있나요? 힌트를 더 드릴게요!
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chatbot-input-area">
+                        <div class="chatbot-input-container">
+                            <input type="text" 
+                                   class="chatbot-input" 
+                                   id="chatInput" 
+                                   placeholder="예: 2010년 크리스토퍼 놀란 영화 힌트 줘"
+                                   onkeypress="if(event.key==='Enter') sendMessage()">
+                            <button class="chatbot-send" id="sendButton" onclick="sendMessage()">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, get, set, push, query, orderByChild, limitToLast } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Firebase 설정 (여기에 본인의 Firebase 설정을 입력하세요)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD9KDyyILuIBufpSuocRhkpIVMISSEMAts",
+  		authDomain: "movie-quiz-woosong.firebaseapp.com",
+  		databaseURL: "https://movie-quiz-woosong-default-rtdb.asia-southeast1.firebasedatabase.app",
+  		projectId: "movie-quiz-woosong",
+  		storageBucket: "movie-quiz-woosong.firebasestorage.app",
+  		messagingSenderId: "939748321670",
+  		appId: "1:939748321670:web:e8a2f15fc3da25547be407"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        let quizData = [];
+        let currentStudent = {};
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let correctAnswers = 0;
+
+        // 전역 함수로 노출
+        window.startQuiz = startQuiz;
+        window.submitAnswer = submitAnswer;
+        window.nextQuestion = nextQuestion;
+        window.resetQuiz = resetQuiz;
+        window.toggleChatbot = toggleChatbot;
+        window.closeChatbot = closeChatbot;
+        window.closeChatbotIfOverlay = closeChatbotIfOverlay;
+        window.saveApiKey = saveApiKey;
+        window.sendMessage = sendMessage;
+
+        let chatHistory = [];
+        const SYSTEM_PROMPT = `당신은 친절한 영화 퀴즈 도우미입니다. 학생들이 영화 제목을 맞추는 것을 도와주세요.
+
+규칙:
+- 절대 바로 정답을 알려주지 마세요
+- 단계적으로 추가 힌트를 제공하세요
+- 출연 배우, 감독, 개봉 연도, 줄거리의 추가 정보를 주세요
+- 학생이 스스로 답을 찾도록 유도하세요
+- 격려와 칭찬을 아끼지 마세요
+- 친근하고 재미있게 대화하세요
+- 한국어로 답변하세요`;
+
+        // 미리 설정된 API 키 (교수님이 설정)
+        const PRESET_API_KEY = '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';
+
+        // 챗봇 토글
+        function toggleChatbot() {
+            const overlay = document.getElementById('chatbotOverlay');
+            
+            // 미리 설정된 API 키가 있으면 자동으로 저장
+            if (PRESET_API_KEY && !localStorage.getItem('openai_api_key')) {
+                localStorage.setItem('openai_api_key', PRESET_API_KEY);
+            }
+            
+            const apiKey = localStorage.getItem('openai_api_key');
+            
+            if (overlay.classList.contains('active')) {
+                closeChatbot();
+            } else {
+                overlay.classList.add('active');
+                
+                if (apiKey) {
+                    showChatArea();
+                } else {
+                    showApiKeySetup();
+                }
+            }
+        }
+
+        // 챗봇 닫기
+        function closeChatbot() {
+            document.getElementById('chatbotOverlay').classList.remove('active');
+        }
+
+        // 오버레이 클릭 시 닫기
+        function closeChatbotIfOverlay(event) {
+            if (event.target.id === 'chatbotOverlay') {
+                closeChatbot();
+            }
+        }
+
+        // API 키 설정 화면 표시
+        function showApiKeySetup() {
+            document.getElementById('apiKeySetup').style.display = 'block';
+            document.getElementById('chatArea').style.display = 'none';
+        }
+
+        // 채팅 화면 표시
+        function showChatArea() {
+            document.getElementById('apiKeySetup').style.display = 'none';
+            document.getElementById('chatArea').style.display = 'flex';
+            
+            // 입력창에 포커스
+            setTimeout(() => {
+                document.getElementById('chatInput').focus();
+            }, 100);
+        }
+
+        // API 키 저장
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            
+            if (!apiKey) {
+                alert('API 키를 입력해주세요.');
+                return;
+            }
+
+            if (!apiKey.startsWith('sk-')) {
+                alert('올바른 OpenAI API 키 형식이 아닙니다. sk-로 시작해야 합니다.');
+                return;
+            }
+
+            localStorage.setItem('openai_api_key', apiKey);
+            alert('✅ API 키가 저장되었습니다!');
+            showChatArea();
+        }
+
+        // 메시지 전송
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // 사용자 메시지 추가
+            addMessage('user', message);
+            input.value = '';
+            
+            // 전송 버튼 비활성화
+            const sendButton = document.getElementById('sendButton');
+            sendButton.disabled = true;
+
+            // 타이핑 인디케이터 표시
+            showTypingIndicator();
+
+            try {
+                // OpenAI API 호출
+                const apiKey = localStorage.getItem('openai_api_key');
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o-mini',
+                        messages: [
+                            { role: 'system', content: SYSTEM_PROMPT },
+                            ...chatHistory,
+                            { role: 'user', content: message }
+                        ],
+                        temperature: 0.8,
+                        max_tokens: 500
+                    })
+                });
+
+                hideTypingIndicator();
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('API 키가 올바르지 않습니다. 설정을 확인해주세요.');
+                    } else if (response.status === 429) {
+                        throw new Error('API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요.');
+                    } else {
+                        throw new Error('API 오류가 발생했습니다.');
+                    }
+                }
+
+                const data = await response.json();
+                const assistantMessage = data.choices[0].message.content;
+
+                // 대화 히스토리에 추가
+                chatHistory.push({ role: 'user', content: message });
+                chatHistory.push({ role: 'assistant', content: assistantMessage });
+
+                // 히스토리가 너무 길어지면 앞부분 제거 (최근 10개 메시지만 유지)
+                if (chatHistory.length > 20) {
+                    chatHistory = chatHistory.slice(-20);
+                }
+
+                // 어시스턴트 메시지 추가
+                addMessage('assistant', assistantMessage);
+
+            } catch (error) {
+                hideTypingIndicator();
+                console.error('챗봇 오류:', error);
+                addMessage('assistant', '❌ 오류: ' + error.message);
+                
+                if (error.message.includes('API 키')) {
+                    localStorage.removeItem('openai_api_key');
+                    setTimeout(() => {
+                        closeChatbot();
+                        alert('API 키를 다시 설정해주세요.');
+                    }, 2000);
+                }
+            } finally {
+                sendButton.disabled = false;
+                input.focus();
+            }
+        }
+
+        // 메시지 추가
+        function addMessage(role, content) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${role}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'chat-avatar';
+            avatar.textContent = role === 'user' ? '👤' : '🤖';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+            bubble.textContent = content;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            messagesDiv.appendChild(messageDiv);
+            
+            // 스크롤을 아래로
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 타이핑 인디케이터 표시
+        function showTypingIndicator() {
+            const messagesDiv = document.getElementById('chatMessages');
+            const indicator = document.createElement('div');
+            indicator.className = 'chat-message assistant';
+            indicator.id = 'typingIndicator';
+            indicator.innerHTML = `
+                <div class="chat-avatar">🤖</div>
+                <div class="typing-indicator active">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </div>
+            `;
+            messagesDiv.appendChild(indicator);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 타이핑 인디케이터 숨기기
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        // ESC 키로 챗봇 닫기
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeChatbot();
+            }
+        });
+
+        // 초기화
+        async function init() {
+            // 일단 로그인 화면 표시
+            showLogin();
+            
+            // Firebase 설정 확인
+            if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+                document.getElementById('loginError').innerHTML = 
+                    '<div class="error-message">⚠️ Firebase 설정이 필요합니다. 관리자에게 문의하세요.</div>';
+                return;
+            }
+
+            // 백그라운드에서 문제 로드
+            try {
+                await loadQuestions();
+                if (quizData.length === 0) {
+                    document.getElementById('loginError').innerHTML = 
+                        '<div class="error-message">⚠️ 등록된 퀴즈 문제가 없습니다. 관리자에게 문의하세요.</div>';
+                }
+            } catch (error) {
+                console.error('초기화 오류:', error);
+                document.getElementById('loginError').innerHTML = 
+                    '<div class="error-message">⚠️ 퀴즈를 불러오는 중 오류가 발생했습니다: ' + error.message + '</div>';
+            }
+        }
+
+        async function loadQuestions() {
+            const questionsRef = ref(database, 'questions');
+            const snapshot = await get(questionsRef);
+            
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                quizData = Object.entries(data).map(([key, value]) => ({
+                    id: key,
+                    ...value
+                }));
+                console.log('문제 로드 완료:', quizData.length + '개');
+            } else {
+                quizData = [];
+            }
+        }
+
+        function showLoading() {
+            hideAllSections();
+            document.querySelector('.loading-section').classList.add('active');
+        }
+
+        function showLogin() {
+            hideAllSections();
+            document.querySelector('.login-section').classList.add('active');
+        }
+
+        function showQuiz() {
+            hideAllSections();
+            document.querySelector('.quiz-section').classList.add('active');
+        }
+
+        function showResults() {
+            hideAllSections();
+            document.querySelector('.result-section').classList.add('active');
+        }
+
+        function hideAllSections() {
+            document.querySelectorAll('.loading-section, .login-section, .quiz-section, .result-section')
+                .forEach(section => section.classList.remove('active'));
+        }
+
+        function showError(message) {
+            document.getElementById('loginError').innerHTML = 
+                `<div class="error-message">${message}</div>`;
+            showLogin();
+        }
+
+        function startQuiz() {
+            const name = document.getElementById('studentName').value.trim();
+            const studentId = document.getElementById('studentId').value.trim();
+
+            if (!name || !studentId) {
+                document.getElementById('loginError').innerHTML = 
+                    '<div class="error-message">이름과 학번을 모두 입력해주세요!</div>';
+                return;
+            }
+
+            currentStudent = { 
+                name, 
+                studentId, 
+                score: 0, 
+                correctAnswers: 0,
+                timestamp: new Date().toISOString()
+            };
+            currentQuestionIndex = 0;
+            score = 0;
+            correctAnswers = 0;
+
+            // 문제 순서 섞기
+            quizData.sort(() => Math.random() - 0.5);
+
+            showQuiz();
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= quizData.length) {
+                finishQuiz();
+                return;
+            }
+
+            const question = quizData[currentQuestionIndex];
+            const progressPercent = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            
+            document.getElementById('progressBar').style.width = progressPercent + '%';
+            document.getElementById('currentQuestion').textContent = `${currentQuestionIndex + 1}/${quizData.length}`;
+            document.getElementById('currentScore').textContent = score;
+
+            const questionHTML = `
+                <div class="movie-card">
+                    <div class="question-number">문제 ${currentQuestionIndex + 1}</div>
+                    <div class="movie-hint">${question.hint}</div>
+                    <input type="text" 
+                           class="answer-input" 
+                           id="answerInput" 
+                           placeholder="영화 제목을 입력하세요..."
+                           onkeypress="if(event.key==='Enter') submitAnswer()">
+                    <button class="btn" id="submitBtn" onclick="submitAnswer()">답안 제출</button>
+                    <button class="btn" id="nextBtn" onclick="nextQuestion()" style="display: none;">다음 문제</button>
+                    <div id="feedback"></div>
+                </div>
+            `;
+
+            document.getElementById('questionContainer').innerHTML = questionHTML;
+            document.getElementById('answerInput').focus();
+        }
+
+        function normalizeText(text) {
+            return text.toLowerCase()
+                .replace(/\s+/g, '')
+                .replace(/[^a-z0-9가-힣]/g, '');
+        }
+
+        function submitAnswer() {
+            const answerInput = document.getElementById('answerInput');
+            const userAnswer = answerInput.value.trim();
+            const submitBtn = document.getElementById('submitBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const feedbackDiv = document.getElementById('feedback');
+
+            if (!userAnswer) {
+                alert('답을 입력해주세요!');
+                return;
+            }
+
+            const question = quizData[currentQuestionIndex];
+            const normalizedUserAnswer = normalizeText(userAnswer);
+            const normalizedCorrectAnswer = normalizeText(question.answer);
+
+            answerInput.disabled = true;
+            submitBtn.disabled = true;
+
+            if (normalizedUserAnswer === normalizedCorrectAnswer) {
+                score += 10;
+                correctAnswers++;
+                feedbackDiv.innerHTML = `
+                    <div class="feedback correct">
+                        ✅ 정답입니다! 훌륭해요! +10점<br>
+                        <span class="correct-answer">정답: ${question.answer}</span>
+                    </div>
+                `;
+            } else {
+                feedbackDiv.innerHTML = `
+                    <div class="feedback wrong">
+                        ❌ 아쉽지만 틀렸습니다.<br>
+                        <span class="correct-answer">정답: ${question.answer}</span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('currentScore').textContent = score;
+            submitBtn.style.display = 'none';
+            nextBtn.style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        async function finishQuiz() {
+            currentStudent.score = score;
+            currentStudent.correctAnswers = correctAnswers;
+
+            // Firebase에 결과 저장
+            try {
+                const resultsRef = ref(database, 'results');
+                await push(resultsRef, currentStudent);
+            } catch (error) {
+                console.error('결과 저장 오류:', error);
+            }
+
+            // 순위 로드 및 표시
+            await displayResults();
+        }
+
+        async function displayResults() {
+            showResults();
+
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('accuracy').textContent = 
+                Math.round((correctAnswers / quizData.length) * 100) + '%';
+
+            try {
+                // 상위 20명 가져오기
+                const resultsRef = ref(database, 'results');
+                const topQuery = query(resultsRef, orderByChild('score'), limitToLast(20));
+                const snapshot = await get(topQuery);
+
+                if (snapshot.exists()) {
+                    const results = [];
+                    snapshot.forEach((child) => {
+                        results.push(child.val());
+                    });
+
+                    // 점수 기준 내림차순 정렬
+                    results.sort((a, b) => b.score - a.score);
+
+                    // 내 순위 찾기
+                    const myRank = results.findIndex(r => 
+                        r.name === currentStudent.name && 
+                        r.studentId === currentStudent.studentId &&
+                        r.timestamp === currentStudent.timestamp
+                    ) + 1;
+
+                    document.getElementById('myRank').textContent = myRank > 0 ? myRank : '-';
+
+                    // 리더보드 표시
+                    const leaderboardHTML = results.slice(0, 10).map((result, index) => {
+                        const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'rank-other';
+                        const isMe = result.name === currentStudent.name && 
+                                   result.studentId === currentStudent.studentId &&
+                                   result.timestamp === currentStudent.timestamp;
+                        return `
+                            <div class="rank-item" style="${isMe ? 'background: #e8f0fe; border: 2px solid #2a5298;' : ''}">
+                                <div class="rank-badge ${rankClass}">${index + 1}</div>
+                                <div class="rank-info">
+                                    <div class="rank-name">${result.name} ${isMe ? '👈' : ''}</div>
+                                    <div class="rank-student-id">${result.studentId}</div>
+                                </div>
+                                <div class="rank-score">${result.score}점</div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    document.getElementById('leaderboardList').innerHTML = leaderboardHTML;
+                }
+            } catch (error) {
+                console.error('순위 로드 오류:', error);
+                document.getElementById('leaderboardList').innerHTML = 
+                    '<div class="error-message">순위를 불러올 수 없습니다.</div>';
+            }
+        }
+
+        function resetQuiz() {
+            document.getElementById('studentName').value = '';
+            document.getElementById('studentId').value = '';
+            showLogin();
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
