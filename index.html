@@ -906,8 +906,13 @@
 - 한국어로 답변하세요`;
 
         // OpenAI API 키 (교수님이 설정)
-        const OPENAI_API_KEY = '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';
+        // const OPENAI_API_KEY = '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';
         const DAILY_CHAT_LIMIT = 20; // 학생당 하루 최대 20회
+        // OpenAI API 키는 이제 프록시에서 관리
+        // const OPENAI_API_KEY = '...';  // 이 줄 삭제 또는 주석 처리
+
+        // Cloudflare Workers 프록시 URL
+            const PROXY_URL = 'https://openai-proxy.gt4065b.workers.dev';
 
         // 챗봇 토글
         function toggleChatbot() {
@@ -1023,12 +1028,12 @@
 
             try {
                 // OpenAI API 호출
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`
-                    },
+               const response = await fetch(PROXY_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                
                     body: JSON.stringify({
                         model: 'gpt-4o-mini',
                         messages: [
