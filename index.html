@@ -1059,7 +1059,32 @@
                 }
 
                 const data = await response.json();
-                const assistantMessage = data.choices[0].message.content;
+                // 안전 파싱
+let assistantMessage = null;
+
+// 1) OpenAI 정식 구조
+if (data?.choices?.[0]?.message?.content) {
+    assistantMessage = data.choices[0].message.content;
+}
+// 2) Cloudflare Workers가 반환하는 경우
+else if (data?.response) {
+    assistantMessage = data.response;
+}
+// 3) 다른 프록시 구조 대비
+else if (data?.result) {
+    assistantMessage = data.result;
+}
+else if (typeof data === 'string') {
+    assistantMessage = data;
+}
+
+// 그래도 메시지가 없으면 오류 처리
+if (!assistantMessage) {
+    addMessage('assistant', '❌ 오류: 프록시 응답을 해석할 수 없습니다.');
+    console.error("Unexpected API response:", data);
+    return;
+}
+
 
                 // 대화 히스토리에 추가
                 chatHistory.push({ role: 'user', content: message });
