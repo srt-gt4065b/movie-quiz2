@@ -384,7 +384,7 @@
             }
         }
 
-        /* 챗봇 모달 오버레이 */
+        /* 챗봇 오버레이 */
         .chatbot-overlay {
             position: fixed;
             top: 0;
@@ -632,7 +632,7 @@
             }
         }
 
-        /* API 키 설정 화면 */
+        /* API 키 설정 화면 (현재는 사용 X지만 함수는 남겨둠) */
         .api-key-setup {
             padding: 30px;
             text-align: center;
@@ -695,7 +695,7 @@
             .header h1 {
                 font-size: 1.5em;
             }
-            
+
             .stats {
                 grid-template-columns: 1fr;
             }
@@ -824,9 +824,9 @@
                 </h3>
                 <button class="chatbot-close" onclick="closeChatbot()">✕</button>
             </div>
-            
+
             <div id="chatbotContent">
-                <!-- 채팅 화면만 표시 -->
+                <!-- 채팅 화면 -->
                 <div style="display: flex; flex-direction: column; height: 100%;" id="chatArea">
                     <div class="chatbot-messages" id="chatMessages">
                         <div class="chat-message assistant">
@@ -837,12 +837,12 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="chatbot-input-area">
                         <div class="chatbot-input-container">
-                            <input type="text" 
-                                   class="chatbot-input" 
-                                   id="chatInput" 
+                            <input type="text"
+                                   class="chatbot-input"
+                                   id="chatInput"
                                    placeholder="예: 2010년 크리스토퍼 놀란 영화 힌트 줘"
                                    onkeypress="if(event.key==='Enter') sendMessage()">
                             <button class="chatbot-send" id="sendButton" onclick="sendMessage()">
@@ -853,16 +853,19 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- (옵션) API 키 설정 UI를 쓴다면 여기에 추가 가능 -->
+                <!-- <div id="apiKeySetup" style="display:none">...</div> -->
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase & 메인 스크립트 -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getDatabase, ref, get, set, push, query, orderByChild, limitToLast } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
-        // Firebase 설정 (여기에 본인의 Firebase 설정을 입력하세요)
+        // Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyD9KDyyILuIBufpSuocRhkpIVMISSEMAts",
             authDomain: "movie-quiz-woosong.firebaseapp.com",
@@ -882,7 +885,7 @@
         let score = 0;
         let correctAnswers = 0;
 
-        // 전역 함수로 노출
+        // 전역 노출
         window.startQuiz = startQuiz;
         window.submitAnswer = submitAnswer;
         window.nextQuestion = nextQuestion;
@@ -905,32 +908,28 @@
 - 친근하고 재미있게 대화하세요
 - 한국어로 답변하세요`;
 
-        // OpenAI API 키 (교수님이 설정)
-        // const OPENAI_API_KEY = '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';
         const DAILY_CHAT_LIMIT = 20; // 학생당 하루 최대 20회
-        // OpenAI API 키는 이제 프록시에서 관리
-        // const OPENAI_API_KEY = '...';  // 이 줄 삭제 또는 주석 처리
 
         // Cloudflare Workers 프록시 URL
-            const PROXY_URL = 'https://quiz-proxy.gt4065b.workers.dev';
+        const PROXY_URL = 'https://quiz-proxy.gt4065b.workers.dev';
 
         // 챗봇 토글
         function toggleChatbot() {
             const overlay = document.getElementById('chatbotOverlay');
-            
+
             if (overlay.classList.contains('active')) {
                 closeChatbot();
             } else {
                 overlay.classList.add('active');
-                
-                // 입력창에 포커스
+
                 setTimeout(() => {
-                    document.getElementById('chatInput').focus();
+                    const input = document.getElementById('chatInput');
+                    if (input) input.focus();
                 }, 100);
             }
         }
 
-        // 오늘 사용 횟수 확인
+        // 오늘 사용 횟수
         function getTodayUsage() {
             const today = new Date().toISOString().split('T')[0];
             const studentId = currentStudent.studentId || 'guest';
@@ -938,7 +937,6 @@
             return parseInt(localStorage.getItem(key) || '0');
         }
 
-        // 사용 횟수 증가
         function incrementUsage() {
             const today = new Date().toISOString().split('T')[0];
             const studentId = currentStudent.studentId || 'guest';
@@ -947,45 +945,49 @@
             localStorage.setItem(key, (current + 1).toString());
         }
 
-        // 사용 가능 여부 확인
         function canUseChat() {
             const usage = getTodayUsage();
             return usage < DAILY_CHAT_LIMIT;
         }
 
-        // 챗봇 닫기
         function closeChatbot() {
             document.getElementById('chatbotOverlay').classList.remove('active');
         }
 
-        // 오버레이 클릭 시 닫기
         function closeChatbotIfOverlay(event) {
             if (event.target.id === 'chatbotOverlay') {
                 closeChatbot();
             }
         }
 
-        // API 키 설정 화면 표시
+        // (옵션) API 키 설정 UI용 함수 – 현재는 사용 X
         function showApiKeySetup() {
-            document.getElementById('apiKeySetup').style.display = 'block';
-            document.getElementById('chatArea').style.display = 'none';
+            const apiKeySetup = document.getElementById('apiKeySetup');
+            const chatArea = document.getElementById('chatArea');
+            if (!apiKeySetup || !chatArea) return;
+            apiKeySetup.style.display = 'block';
+            chatArea.style.display = 'none';
         }
 
-        // 채팅 화면 표시
         function showChatArea() {
-            document.getElementById('apiKeySetup').style.display = 'none';
-            document.getElementById('chatArea').style.display = 'flex';
-            
-            // 입력창에 포커스
+            const apiKeySetup = document.getElementById('apiKeySetup');
+            const chatArea = document.getElementById('chatArea');
+            if (!apiKeySetup || !chatArea) return;
+            apiKeySetup.style.display = 'none';
+            chatArea.style.display = 'flex';
+
             setTimeout(() => {
-                document.getElementById('chatInput').focus();
+                const input = document.getElementById('chatInput');
+                if (input) input.focus();
             }, 100);
         }
 
-        // API 키 저장
         function saveApiKey() {
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
-            
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            if (!apiKeyInput) return;
+
+            const apiKey = apiKeyInput.value.trim();
+
             if (!apiKey) {
                 alert('API 키를 입력해주세요.');
                 return;
@@ -1004,8 +1006,9 @@
         // 메시지 전송
         async function sendMessage() {
             const input = document.getElementById('chatInput');
+            if (!input) return;
+
             const message = input.value.trim();
-            
             if (!message) return;
 
             // 사용 제한 확인
@@ -1018,22 +1021,18 @@
             // 사용자 메시지 추가
             addMessage('user', message);
             input.value = '';
-            
-            // 전송 버튼 비활성화
-            const sendButton = document.getElementById('sendButton');
-            sendButton.disabled = true;
 
-            // 타이핑 인디케이터 표시
+            const sendButton = document.getElementById('sendButton');
+            if (sendButton) sendButton.disabled = true;
+
             showTypingIndicator();
 
             try {
-                // OpenAI API 호출
-               const response = await fetch(PROXY_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                
+                const response = await fetch(PROXY_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         model: 'gpt-4o-mini',
                         messages: [
@@ -1060,38 +1059,42 @@
 
                 const data = await response.json();
                 console.log("프록시 원본 응답:", data);
-                // 안전 파싱
-let assistantMessage = null;
 
-// 1) OpenAI 정식 구조
-if (data?.choices?.[0]?.message?.content) {
-    assistantMessage = data.choices[0].message.content;
-}
-// 2) Cloudflare Workers가 반환하는 경우
-else if (data?.response) {
-    assistantMessage = data.response;
-}
-// 3) 다른 프록시 구조 대비
-else if (data?.result) {
-    assistantMessage = data.result;
-}
-else if (typeof data === 'string') {
-    assistantMessage = data;
-}
+                // ✅ 응답 안전 파싱 (예전/새 API 모두 처리)
+                let assistantMessage = null;
 
-// 그래도 메시지가 없으면 오류 처리
-if (!assistantMessage) {
-    addMessage('assistant', '❌ 오류: 프록시 응답을 해석할 수 없습니다.');
-    console.error("Unexpected API response:", data);
-    return;
-}
+                // 1) 예전 ChatCompletion 구조
+                if (data?.choices?.[0]?.message?.content) {
+                    assistantMessage = data.choices[0].message.content;
+                }
+                // 2) 프록시에서 커스텀 필드로 줄 때
+                else if (data?.response) {
+                    assistantMessage = data.response;
+                }
+                // 3) result 필드를 사용하는 프록시
+                else if (data?.result) {
+                    assistantMessage = data.result;
+                }
+                // 4) 최신 OpenAI Responses API 구조
+                else if (data?.output?.[0]?.content?.[0]?.text) {
+                    assistantMessage = data.output[0].content[0].text;
+                }
+                // 5) 순수 문자열
+                else if (typeof data === 'string') {
+                    assistantMessage = data;
+                }
 
+                // 파싱 실패
+                if (!assistantMessage) {
+                    addMessage('assistant', '❌ 오류: 프록시 응답을 해석할 수 없습니다.');
+                    console.error("Unexpected API response:", data);
+                    return;
+                }
 
-                // 대화 히스토리에 추가
+                // 대화 히스토리 업데이트
                 chatHistory.push({ role: 'user', content: message });
                 chatHistory.push({ role: 'assistant', content: assistantMessage });
 
-                // 히스토리가 너무 길어지면 앞부분 제거 (최근 10개 메시지만 유지)
                 if (chatHistory.length > 20) {
                     chatHistory = chatHistory.slice(-20);
                 }
@@ -1099,10 +1102,9 @@ if (!assistantMessage) {
                 // 사용 횟수 증가
                 incrementUsage();
 
-                // 어시스턴트 메시지 추가
+                // 어시스턴트 메시지 출력
                 addMessage('assistant', assistantMessage);
 
-                // 남은 사용 횟수 표시
                 const remaining = DAILY_CHAT_LIMIT - getTodayUsage();
                 if (remaining <= 5) {
                     addMessage('assistant', `💡 오늘 ${remaining}회 더 사용 가능합니다.`);
@@ -1113,7 +1115,7 @@ if (!assistantMessage) {
                 console.error('챗봇 오류:', error);
                 addMessage('assistant', '❌ 오류: ' + error.message);
             } finally {
-                sendButton.disabled = false;
+                if (sendButton) sendButton.disabled = false;
                 input.focus();
             }
         }
@@ -1121,28 +1123,30 @@ if (!assistantMessage) {
         // 메시지 추가
         function addMessage(role, content) {
             const messagesDiv = document.getElementById('chatMessages');
+            if (!messagesDiv) return;
+
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${role}`;
-            
+
             const avatar = document.createElement('div');
             avatar.className = 'chat-avatar';
             avatar.textContent = role === 'user' ? '👤' : '🤖';
-            
+
             const bubble = document.createElement('div');
             bubble.className = 'chat-bubble';
             bubble.textContent = content;
-            
+
             messageDiv.appendChild(avatar);
             messageDiv.appendChild(bubble);
             messagesDiv.appendChild(messageDiv);
-            
-            // 스크롤을 아래로
+
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // 타이핑 인디케이터 표시
         function showTypingIndicator() {
             const messagesDiv = document.getElementById('chatMessages');
+            if (!messagesDiv) return;
+
             const indicator = document.createElement('div');
             indicator.className = 'chat-message assistant';
             indicator.id = 'typingIndicator';
@@ -1158,12 +1162,9 @@ if (!assistantMessage) {
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // 타이핑 인디케이터 숨기기
         function hideTypingIndicator() {
             const indicator = document.getElementById('typingIndicator');
-            if (indicator) {
-                indicator.remove();
-            }
+            if (indicator) indicator.remove();
         }
 
         // ESC 키로 챗봇 닫기
@@ -1175,26 +1176,23 @@ if (!assistantMessage) {
 
         // 초기화
         async function init() {
-            // 일단 로그인 화면 표시
             showLogin();
-            
-            // Firebase 설정 확인
+
             if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-                document.getElementById('loginError').innerHTML = 
+                document.getElementById('loginError').innerHTML =
                     '<div class="error-message">⚠️ Firebase 설정이 필요합니다. 관리자에게 문의하세요.</div>';
                 return;
             }
 
-            // 백그라운드에서 문제 로드
             try {
                 await loadQuestions();
                 if (quizData.length === 0) {
-                    document.getElementById('loginError').innerHTML = 
+                    document.getElementById('loginError').innerHTML =
                         '<div class="error-message">⚠️ 등록된 퀴즈 문제가 없습니다. 관리자에게 문의하세요.</div>';
                 }
             } catch (error) {
                 console.error('초기화 오류:', error);
-                document.getElementById('loginError').innerHTML = 
+                document.getElementById('loginError').innerHTML =
                     '<div class="error-message">⚠️ 퀴즈를 불러오는 중 오류가 발생했습니다: ' + error.message + '</div>';
             }
         }
@@ -1202,7 +1200,7 @@ if (!assistantMessage) {
         async function loadQuestions() {
             const questionsRef = ref(database, 'questions');
             const snapshot = await get(questionsRef);
-            
+
             if (snapshot.exists()) {
                 const data = snapshot.val();
                 quizData = Object.entries(data).map(([key, value]) => ({
@@ -1241,7 +1239,7 @@ if (!assistantMessage) {
         }
 
         function showError(message) {
-            document.getElementById('loginError').innerHTML = 
+            document.getElementById('loginError').innerHTML =
                 `<div class="error-message">${message}</div>`;
             showLogin();
         }
@@ -1251,15 +1249,15 @@ if (!assistantMessage) {
             const studentId = document.getElementById('studentId').value.trim();
 
             if (!name || !studentId) {
-                document.getElementById('loginError').innerHTML = 
+                document.getElementById('loginError').innerHTML =
                     '<div class="error-message">이름과 학번을 모두 입력해주세요!</div>';
                 return;
             }
 
-            currentStudent = { 
-                name, 
-                studentId, 
-                score: 0, 
+            currentStudent = {
+                name,
+                studentId,
+                score: 0,
                 correctAnswers: 0,
                 timestamp: new Date().toISOString()
             };
@@ -1267,7 +1265,6 @@ if (!assistantMessage) {
             score = 0;
             correctAnswers = 0;
 
-            // 문제 순서 섞기
             quizData.sort(() => Math.random() - 0.5);
 
             showQuiz();
@@ -1282,7 +1279,7 @@ if (!assistantMessage) {
 
             const question = quizData[currentQuestionIndex];
             const progressPercent = ((currentQuestionIndex + 1) / quizData.length) * 100;
-            
+
             document.getElementById('progressBar').style.width = progressPercent + '%';
             document.getElementById('currentQuestion').textContent = `${currentQuestionIndex + 1}/${quizData.length}`;
             document.getElementById('currentScore').textContent = score;
@@ -1291,9 +1288,9 @@ if (!assistantMessage) {
                 <div class="movie-card">
                     <div class="question-number">문제 ${currentQuestionIndex + 1}</div>
                     <div class="movie-hint">${question.hint}</div>
-                    <input type="text" 
-                           class="answer-input" 
-                           id="answerInput" 
+                    <input type="text"
+                           class="answer-input"
+                           id="answerInput"
                            placeholder="영화 제목을 입력하세요..."
                            onkeypress="if(event.key==='Enter') submitAnswer()">
                     <button class="btn" id="submitBtn" onclick="submitAnswer()">답안 제출</button>
@@ -1363,7 +1360,6 @@ if (!assistantMessage) {
             currentStudent.score = score;
             currentStudent.correctAnswers = correctAnswers;
 
-            // Firebase에 결과 저장
             try {
                 const resultsRef = ref(database, 'results');
                 await push(resultsRef, currentStudent);
@@ -1371,7 +1367,6 @@ if (!assistantMessage) {
                 console.error('결과 저장 오류:', error);
             }
 
-            // 순위 로드 및 표시
             await displayResults();
         }
 
@@ -1379,11 +1374,10 @@ if (!assistantMessage) {
             showResults();
 
             document.getElementById('finalScore').textContent = score;
-            document.getElementById('accuracy').textContent = 
+            document.getElementById('accuracy').textContent =
                 Math.round((correctAnswers / quizData.length) * 100) + '%';
 
             try {
-                // 상위 20명 가져오기
                 const resultsRef = ref(database, 'results');
                 const topQuery = query(resultsRef, orderByChild('score'), limitToLast(20));
                 const snapshot = await get(topQuery);
@@ -1394,24 +1388,27 @@ if (!assistantMessage) {
                         results.push(child.val());
                     });
 
-                    // 점수 기준 내림차순 정렬
                     results.sort((a, b) => b.score - a.score);
 
-                    // 내 순위 찾기
-                    const myRank = results.findIndex(r => 
-                        r.name === currentStudent.name && 
+                    const myRank = results.findIndex(r =>
+                        r.name === currentStudent.name &&
                         r.studentId === currentStudent.studentId &&
                         r.timestamp === currentStudent.timestamp
                     ) + 1;
 
                     document.getElementById('myRank').textContent = myRank > 0 ? myRank : '-';
 
-                    // 리더보드 표시
                     const leaderboardHTML = results.slice(0, 10).map((result, index) => {
-                        const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'rank-other';
-                        const isMe = result.name === currentStudent.name && 
-                                   result.studentId === currentStudent.studentId &&
-                                   result.timestamp === currentStudent.timestamp;
+                        const rankClass =
+                            index === 0 ? 'rank-1' :
+                            index === 1 ? 'rank-2' :
+                            index === 2 ? 'rank-3' : 'rank-other';
+
+                        const isMe =
+                            result.name === currentStudent.name &&
+                            result.studentId === currentStudent.studentId &&
+                            result.timestamp === currentStudent.timestamp;
+
                         return `
                             <div class="rank-item" style="${isMe ? 'background: #e8f0fe; border: 2px solid #2a5298;' : ''}">
                                 <div class="rank-badge ${rankClass}">${index + 1}</div>
@@ -1428,7 +1425,7 @@ if (!assistantMessage) {
                 }
             } catch (error) {
                 console.error('순위 로드 오류:', error);
-                document.getElementById('leaderboardList').innerHTML = 
+                document.getElementById('leaderboardList').innerHTML =
                     '<div class="error-message">순위를 불러올 수 없습니다.</div>';
             }
         }
@@ -1439,7 +1436,6 @@ if (!assistantMessage) {
             showLogin();
         }
 
-        // 페이지 로드 시 초기화
         window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
